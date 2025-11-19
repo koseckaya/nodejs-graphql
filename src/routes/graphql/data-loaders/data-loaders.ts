@@ -4,7 +4,7 @@ import { PrismaClient, User, Profile, Post, MemberType } from '@prisma/client';
 export interface DataLoaders {
   profileLoader: DataLoader<string, Profile | null>;
   postsLoader: DataLoader<string, Post[]>;
-  memberTypeLoader: DataLoader<string, MemberType[]>;
+  memberTypeLoader: DataLoader<string, MemberType | null>;
   userSubscribedToLoader: DataLoader<string, User[]>;
   subscribedToUserLoader: DataLoader<string, User[]>;
 }
@@ -34,7 +34,9 @@ export const createDataLoaders = (prisma: PrismaClient) => {
           id: { in: Array.from(ids) },
         },
       });
-      return ids.map((id) => memberTypes.filter((type) => type.id === id));
+      const memberTypesMap = new Map<string, MemberType>();
+      memberTypes.forEach((memberType) => memberTypesMap.set(memberType.id, memberType));
+      return ids.map((id) => memberTypesMap.get(id) || null);
     }),
 
     userSubscribedToLoader: new DataLoader(async (ids: readonly string[]) => {
