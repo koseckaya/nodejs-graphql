@@ -13,10 +13,8 @@ export const ProfileType = new GraphQLObjectType({
     userId: { type: UUIDType },
     memberType: {
       type: MemberTypeType,
-      resolve: async (profile: Profile, _, { prisma }: Shared) => {
-        return await prisma.memberType.findUnique({
-          where: { id: profile.memberTypeId },
-        });
+      resolve: async (profile: Profile, _, { loaders }: Shared) => {
+        return loaders.memberTypeLoader.load(profile.memberTypeId);
       },
     },
   }),

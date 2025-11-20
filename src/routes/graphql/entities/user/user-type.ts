@@ -4,7 +4,6 @@ import { ProfileType } from '../profile/profile-type.js';
 import { Shared } from '../../types/shared.js';
 import { PostType } from '../post/post-type.js';
 import { User } from '@prisma/client';
-
 export const UserType = new GraphQLObjectType({
   name: 'User',
   fields: () => ({
@@ -13,39 +12,27 @@ export const UserType = new GraphQLObjectType({
     balance: { type: GraphQLFloat },
     profile: {
       type: ProfileType,
-      resolve: async (user: User, _, { prisma }: Shared) => {
-        return await prisma.profile.findUnique({
-          where: { userId: user.id },
-        });
+      resolve: async (user: User, _, { loaders }: Shared) => {
+        return loaders.profileLoader.load(user.id);
       },
     },
     posts: {
       type: new GraphQLList(PostType),
-      resolve: async (user: User, _, { prisma }) => {
-        return await prisma.post.findMany({
-          where: { authorId: user.id },
-        });
+      resolve: async (user: User, _, { loaders }) => {
+        return loaders.postsLoader.load(user.id);
       },
     },
     userSubscribedTo: {
       type: new GraphQLList(UserType),
-      resolve: async (user, _, { prisma }) => {
-        const subscriptions = await prisma.subscribersOnAuthors.findMany({
-          where: { subscriberId: user.id },
-          include: { author: true },
-        });
-        return subscriptions.map((sub) => sub.author);
+      resolve: async (user, _, { loaders }) => {
+        return loaders.userSubscribedToLoader.load(user.id);
       },
     },
     subscribedToUser: {
       type: new GraphQLList(UserType),
-      resolve: async (user, _, { prisma }) => {
-        const subscriptions = await prisma.subscribersOnAuthors.findMany({
-          where: { authorId: user.id },
-          include: { subscriber: true },
-        });
-        return subscriptions.map((sub) => sub.subscriber);
+      resolve: async (user, _, { loaders }) => {
+        return loaders.subscribedToUserLoader.load(user.id);
       },
     },
   }),
-});
+}) as GraphQLObjectType;
